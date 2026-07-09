@@ -1,0 +1,35 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ "fongmi" ]
+  pull_request:
+    branches: [ "fongmi" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Build with Gradle
+        run: |
+          echo "storeFile=/tmp/debug.keystore" > local.properties
+          echo "keyAlias=androiddebugkey" >> local.properties
+          echo "storePassword=android" >> local.properties
+          echo "keyPassword=android" >> local.properties
+          keytool -genkey -v -keystore /tmp/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=,OU=,O=,L=,S=,C="
+          chmod +x gradlew
+          ./gradlew assembleLeanbackArm64_v8aRelease
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tvbox-leanback-arm64_v8a
+          path: app/build/outputs/apk/leanback/arm64_v8a/release/leanback-arm64_v8a.apk
