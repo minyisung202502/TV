@@ -24,6 +24,10 @@ jobs:
         with:
           python-version: '3.10'
           architecture: 'x64'
+      - name: Install required SDK platforms
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-37" "build-tools;37.0.0" --sdk_root=$ANDROID_HOME || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list --sdk_root=$ANDROID_HOME 2>&1 | grep "android-3" | head -20 || true
       - name: Build with Gradle
         run: |
           echo "storeFile=/tmp/debug.keystore" > local.properties
@@ -32,9 +36,10 @@ jobs:
           echo "keyPassword=android" >> local.properties
           keytool -genkey -v -keystore /tmp/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=,OU=,O=,L=,S=,C="
           chmod +x gradlew
-          ./gradlew assembleLeanbackArm64_v8aRelease
+          ./gradlew assembleLeanbackArm64_v8aRelease --no-build-cache --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: tvbox-leanback-arm64_v8a
           path: app/build/outputs/apk/leanback/arm64_v8a/release/leanback-arm64_v8a.apk
+          if-no-files-found: warn
